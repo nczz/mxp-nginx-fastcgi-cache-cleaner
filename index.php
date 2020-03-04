@@ -303,7 +303,7 @@ function mxp_nxfcgi_purge_post($post_id) {
             $post_id,
             false, //('purge_page_on_new_comment'),
             false, //('purge_archive_on_new_comment'),
-            false, //('purge_archive_on_new_comment')
+            false//('purge_archive_on_new_comment')
         );
 
     } else {
@@ -311,7 +311,7 @@ function mxp_nxfcgi_purge_post($post_id) {
             $post_id,
             false, //('purge_page_on_mod'),
             false, //('purge_archive_on_edit'),
-            false, //('purge_archive_on_edit')
+            false//('purge_archive_on_edit')
         );
     }
     mxp_ngfcgi_custom_purge_urls();
@@ -356,7 +356,7 @@ function mxp_nxfcgi_purge_on_post_moved_to_trash($new_status, $old_status, $post
             $post->ID,
             true,
             true, //['purge_archive_on_del'],
-            true, //['purge_archive_on_del']
+            true//['purge_archive_on_del']
         );
     }
     return true;

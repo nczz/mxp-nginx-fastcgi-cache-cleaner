@@ -92,7 +92,7 @@ function mxp_nginx_fastcgi_purge_all_admin_bar() {
 
     switch ($action) {
     case 'purge':
-        mxp_nginx_fastcgi_purge_all(RT_WP_NGINX_HELPER_CACHE_PATH, true);
+        mxp_nginx_fastcgi_purge_all(RT_WP_NGINX_HELPER_CACHE_PATH, false);
         break;
     case 'purge_current_page':
         mxp_nginx_fastcgi_purge_url($current_url);
@@ -162,7 +162,7 @@ function mxp_nginx_fastcgi_purge_all($dir, $delete_root_too) {
             continue;
         }
         if (!@unlink($dir . '/' . $obj)) {
-            mxp_nginx_fastcgi_purge_all($dir . '/' . $obj, false);
+            mxp_nginx_fastcgi_purge_all($dir . '/' . $obj, true);
         }
     }
     if ($delete_root_too) {

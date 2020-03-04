@@ -131,12 +131,12 @@ function mxp_nginx_fastcgi_purge_url($url) {
         //確認是否存在快取檔案，並移除
         if (file_exists($cached_file)) {
             if (unlink($cached_file)) {
-                error_log('- - ' . $url . ' *** PURGED ***');
+                error_log('清除 ' . $url . ' 頁面快取成功。');
             } else {
-                error_log('- - An error occurred deleting the cache file. Check the server logs for a PHP warning.');
+                error_log('CLEAN_CACHE_ERROR');
             }
         } else {
-            error_log('快取檔案不存在Ｒ～');
+            error_log($version . ' 版本的快取檔案不存在');
         }
     }
 }

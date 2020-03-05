@@ -24,10 +24,10 @@ function mxp_nxfcgi_toolbar_purge_link($wp_admin_bar) {
 
     if (is_admin()) {
         $clean_page = 'all';
-        $link_title = '清除全站快取';
+        $link_title = '清除全站 FastCGI 快取';
     } else {
         $clean_page = 'current-url';
-        $link_title = '清除當前頁面快取';
+        $link_title = '清除當前頁面 FastCGI 快取';
     }
 
     $purge_url = add_query_arg(

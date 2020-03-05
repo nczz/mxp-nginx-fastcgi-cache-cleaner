@@ -145,7 +145,7 @@ function mxp_nginx_fastcgi_purge_url($url) {
         //確認是否存在快取檔案，並移除
         if (file_exists($cached_file)) {
             if (unlink($cached_file)) {
-                error_log('清除 ' . $url . ' 頁面快取成功。');
+                error_log('清除 ' . $version . ' 版本的 ' . $url . ' 頁面快取成功。');
             } else {
                 error_log('CLEAN_CACHE_ERROR');
             }
@@ -236,7 +236,7 @@ function mxp_nxfcgi_purge_by_options($post_id, $_purge_page, $_purge_archive, $_
             $_post_type_archive_link = get_post_type_archive_link($_post_type);
             mxp_nginx_fastcgi_purge_url($_post_type_archive_link);
         }
-        error_log("permalink_structure: XXX > " . get_option('permalink_structure'));
+
         if ('post' === $_post_type) {
             $day   = get_the_time('d', $post_id);
             $month = get_the_time('m', $post_id);

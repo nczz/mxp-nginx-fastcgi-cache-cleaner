@@ -16,7 +16,7 @@ if (!defined('RT_WP_NGINX_HELPER_CACHE_PATH')) {
     define('RT_WP_NGINX_HELPER_CACHE_PATH', '/tmp/nginx-cache');
 }
 
-function nginx_helper_toolbar_purge_link($wp_admin_bar) {
+function mxp_nxfcgi_toolbar_purge_link($wp_admin_bar) {
 
     if (!current_user_can('manage_options')) {
         return;
@@ -49,14 +49,27 @@ function nginx_helper_toolbar_purge_link($wp_admin_bar) {
     );
 
 }
-add_action('admin_bar_menu', 'nginx_helper_toolbar_purge_link', 100);
+add_action('admin_bar_menu', 'mxp_nxfcgi_toolbar_purge_link', 100);
+
+function mxp_nxfcgi_admin_menu() {
+    add_submenu_page(
+        'options-general.php',
+        'Nginx FastCGI 快取',
+        'Nginx FastCGI 快取',
+        'manage_options',
+        'mxp_nxfcgi_setting',
+        'mxp_nxfcgi_setting_page_callback'
+    );
+}
+add_action('admin_menu', 'mxp_nxfcgi_admin_menu');
+
+function mxp_nxfcgi_setting_page_callback() {
+    include plugin_dir_path(__FILE__) . '/mxp-nxfcgi-settings.php';
+}
 
 function mxp_nginx_fastcgi_purge_all_admin_bar() {
-
     global $wp;
-
     $method = filter_input(INPUT_SERVER, 'REQUEST_METHOD', FILTER_SANITIZE_STRING);
-
     if ('POST' === $method) {
         $action = filter_input(INPUT_POST, 'mxp_clean_action', FILTER_SANITIZE_STRING);
     } else {
@@ -111,10 +124,11 @@ function mxp_purge_success_display_notices() {
 
 function mxp_nginx_fastcgi_purge_url($url) {
     //檢查連結是否正確
-    $url_data = wp_parse_url($url);
-    if (!$url_data) {
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
         return false;
     }
+    $url_data = wp_parse_url($url);
+
     //要清除的版本
     $page_version = array('desktop' => 0, 'mobile' => 1);
     foreach ($page_version as $version => $key) {
@@ -136,7 +150,7 @@ function mxp_nginx_fastcgi_purge_url($url) {
                 error_log('CLEAN_CACHE_ERROR');
             }
         } else {
-            error_log($version . ' 版本的快取檔案不存在');
+            error_log($version . ' 版本的 ' . $url . ' 快取檔案不存在');
         }
     }
 }
@@ -190,25 +204,25 @@ function mxp_nxfcgi_purge_by_options($post_id, $_purge_page, $_purge_archive, $_
     if ($_purge_page) {
         $post_status = get_post_status($post_id);
 
-        if ('publish' !== $post_status) {
-            if (!function_exists('get_sample_permalink')) {
-                require_once ABSPATH . '/wp-admin/includes/post.php';
-            }
-            $url = get_sample_permalink($post_id);
-            if (!empty($url[0]) && !empty($url[1])) {
-                $url = str_replace('%postname%', $url[1], $url[0]);
-            } else {
-                $url = '';
-            }
-        } else {
-            $url = get_permalink($post_id);
-        }
+        // if ('publish' !== $post_status) {
+        //     if (!function_exists('get_sample_permalink')) {
+        //         require_once ABSPATH . '/wp-admin/includes/post.php';
+        //     }
+        //     $url = get_sample_permalink($post_id);
+        //     if (!empty($url[0]) && !empty($url[1])) {
+        //         $url = str_replace('%postname%', $url[1], $url[0]);
+        //     } else {
+        //         $url = '';
+        //     }
+        // } else {
+        $url = get_permalink($post_id);
+        // }
 
         if (empty($url) && !is_array($url)) {
             return;
         }
 
-        if ('trash' === get_post_status($post_id)) {
+        if ('trash' === $post_status) {
             $url = str_replace('__trashed', '', $url);
         }
         mxp_nginx_fastcgi_purge_url($url);
@@ -216,12 +230,13 @@ function mxp_nxfcgi_purge_by_options($post_id, $_purge_page, $_purge_archive, $_
 
     if ($_purge_archive) {
 
-        $_post_type_archive_link = get_post_type_archive_link($_post_type);
+        $_post_type_archive_link = "";
 
-        if (function_exists('get_post_type_archive_link') && $_post_type_archive_link) {
+        if (function_exists('get_post_type_archive_link')) {
+            $_post_type_archive_link = get_post_type_archive_link($_post_type);
             mxp_nginx_fastcgi_purge_url($_post_type_archive_link);
         }
-
+        error_log("permalink_structure: XXX > " . get_option('permalink_structure'));
         if ('post' === $_post_type) {
             $day   = get_the_time('d', $post_id);
             $month = get_the_time('m', $post_id);
@@ -279,21 +294,23 @@ function mxp_nxfcgi_purge_by_options($post_id, $_purge_page, $_purge_archive, $_
             }
         }
     }
+    //清除特定連結
+    mxp_ngfcgi_custom_purge_urls();
 }
 
 function mxp_nxfcgi_purge_post($post_id) {
-
-    switch (current_filter()) {
-    case 'publish_post':
-        break;
-    case 'publish_page':
-        break;
-    case 'comment_post':
-    case 'wp_set_comment_status':
-        break;
-    default:
-        break;
-    }
+    // 紀錄狀態用
+    // switch (current_filter()) {
+    // case 'publish_post':
+    //     break;
+    // case 'publish_page':
+    //     break;
+    // case 'comment_post':
+    // case 'wp_set_comment_status':
+    //     break;
+    // default:
+    //     break;
+    // }
 
     //清除首頁
     mxp_nginx_fastcgi_purge_homepage();
@@ -301,45 +318,42 @@ function mxp_nxfcgi_purge_post($post_id) {
     if ('comment_post' === current_filter() || 'wp_set_comment_status' === current_filter()) {
         mxp_nxfcgi_purge_by_options(
             $post_id,
-            false, //('purge_page_on_new_comment'),
-            false, //('purge_archive_on_new_comment'),
-            false//('purge_archive_on_new_comment')
+            true, //purge_page_on_new_comment
+            false, //purge_archive_on_new_comment
+            false//purge_archive_on_new_comment
         );
 
     } else {
         mxp_nxfcgi_purge_by_options(
             $post_id,
-            false, //('purge_page_on_mod'),
-            false, //('purge_archive_on_edit'),
-            false//('purge_archive_on_edit')
+            true, //purge_page_on_mod
+            false, //purge_archive_on_edit
+            false//purge_archive_on_edit
         );
     }
-    mxp_ngfcgi_custom_purge_urls();
-
 }
-//特別指定要清除的 URL，尚未實作
+//特別指定要清除的網址
 function mxp_ngfcgi_custom_purge_urls() {
-    // $parse      = wp_parse_url(home_url());
-    // $purge_urls = isset(get_option('purge_url')) && !empty(get_option('purge_url')) ?
-    // explode("\r\n", get_option('purge_url')) : array();
-    // /**
-    //  * Allow plugins/themes to modify/extend urls.
-    //  *
-    //  * @param array $purge_urls URLs which needs to be purged.
-    //  * @param bool  $wildcard   If wildcard in url is allowed or not. default false.
-    //  */
-    // $purge_urls      = apply_filters('rt_nginx_helper_purge_urls', $purge_urls, false);
-    // $_url_purge_base = $parse['scheme'] . '://' . $parse['host'];
-    // if (is_array($purge_urls) && !empty($purge_urls)) {
-    //     foreach ($purge_urls as $purge_url) {
-    //         $purge_url = trim($purge_url);
-    //         if (strpos($purge_url, '*') === false) {
-    //             $purge_url = $_url_purge_base . $purge_url;
-    //             mxp_nginx_fastcgi_purge_url($purge_url);
+    $parse      = wp_parse_url(home_url());
+    $purge_urls = !empty(get_option('mxp_nxfcgi_custom_purge_urls', "")) ?
+    explode("\r\n", get_option('mxp_nxfcgi_custom_purge_urls')) : array();
 
-    //         }
-    //     }
-    // }
+    $purge_urls = apply_filters('mxp_nxfcgi_custom_purge_urls', $purge_urls);
+
+    $_url_purge_base = $parse['scheme'] . '://' . $parse['host'];
+    if (is_array($purge_urls) && !empty($purge_urls)) {
+        foreach ($purge_urls as $purge_url) {
+            $purge_url = trim($purge_url);
+            if (strpos($purge_url, '/') !== 0) {
+                $purge_url = '/' . $purge_url;
+            }
+            if (strpos($purge_url, '*') === false) {
+                $purge_url = $_url_purge_base . $purge_url;
+                mxp_nginx_fastcgi_purge_url($purge_url);
+
+            }
+        }
+    }
 }
 
 function mxp_nxfcgi_purge_on_term_taxonomy_edited($term_id, $tt_id, $taxon) {
@@ -348,20 +362,6 @@ function mxp_nxfcgi_purge_on_term_taxonomy_edited($term_id, $tt_id, $taxon) {
 }
 add_action('delete_term', 'mxp_nxfcgi_purge_on_term_taxonomy_edited', 20, 3);
 add_action('edit_term', 'mxp_nxfcgi_purge_on_term_taxonomy_edited', 20, 3);
-
-function mxp_nxfcgi_purge_on_post_moved_to_trash($new_status, $old_status, $post) {
-    if ('trash' === $new_status) {
-        mxp_nginx_fastcgi_purge_homepage();
-        mxp_nxfcgi_purge_by_options(
-            $post->ID,
-            true,
-            true, //['purge_archive_on_del'],
-            true//['purge_archive_on_del']
-        );
-    }
-    return true;
-}
-add_action('transition_post_status', 'mxp_nxfcgi_purge_on_post_moved_to_trash', 20, 3);
 
 function mxp_nxfcgi_purge_post_on_comment($comment_id, $comment) {
     $oldstatus = '';
@@ -386,6 +386,7 @@ add_action('wp_insert_comment', 'mxp_nxfcgi_purge_post_on_comment', 200, 2);
 function mxp_nxfcgi_purge_post_on_comment_change($newstatus, $oldstatus, $comment) {
     $_post_id    = $comment->comment_post_ID;
     $_comment_id = $comment->comment_ID;
+    error_log("COMMENT STATUS LOG: " . $oldstatus . "_to_" . $newstatus . " PID: " . $_post_id . " CID: " . $_comment_id);
     switch ($newstatus) {
     case 'approved':
         mxp_nxfcgi_purge_post($_post_id);
@@ -401,37 +402,28 @@ function mxp_nxfcgi_purge_post_on_comment_change($newstatus, $oldstatus, $commen
 }
 add_action('transition_comment_status', 'mxp_nxfcgi_purge_post_on_comment_change', 200, 3);
 
-//針對排程發文紀錄，之後 CRONJOB 處理清除，尚未實作
-function mxp_nxfcgi_set_future_post_option_on_future_status($new_status, $old_status, $post) {
-
-    // $purge_status = array('publish', 'future');
-
-    // if (in_array($old_status, $purge_status, true) || in_array($new_status, $purge_status, true)) {
-
-    //     $nginx_purger->purge_post($post->ID);
-
-    // }
-
-    // if (
-    //     'future' === $new_status && $post && 'future' === $post->post_status &&
-    //     (
-    //         ('post' === $post->post_type || 'page' === $post->post_type) ||
-    //         (
-    //             //客製化 Post Types
-    //             in_array($post->post_type, array('product', 'content_block'), true)
-    //         )
-    //     )
-    // ) {
-
-    // $nginx_purger->log('Set/update future_posts option ( post id = ' . $post->ID . ' and blog id = ' . $blog_id . ' )');
-    // $this->options['future_posts'][$blog_id][$post->ID] = strtotime($post->post_date_gmt) + 60;
-    // update_site_option('rt_wp_nginx_helper_options', $this->options);
-
-    // }
-
+function mxp_nxfcgi_check_post_status($new_status, $old_status, $post) {
+    $case = $old_status . "_to_" . $new_status;
+    error_log("POST STATUS LOG: " . $case . " PID: " . $post->ID);
+    switch ($case) {
+    case 'publish_to_publish': //更新內容
+    case 'publish_to_trash': //刪除內容
+    case 'future_to_publish': //排程發佈
+    case 'new_to_publish': //發佈內容
+    case 'trash_to_publish': //誤刪內容
+    case 'auto-draft_to_publish': //直接發佈
+    case 'draft_to_publish': //草稿發佈
+        error_log("CLEANING STATUS: " . $case . " PID: " . $post->ID);
+        mxp_nginx_fastcgi_purge_homepage();
+        mxp_nxfcgi_purge_by_options(
+            $post->ID,
+            true, //清除頁面
+            true, //清除列表頁（處理內建預設的分類與標籤）
+            true//清除分類頁（如有CPT需要開啟）
+        );
+        break;
+    default:
+        break;
+    }
 }
-add_action('transition_post_status', 'mxp_nxfcgi_set_future_post_option_on_future_status', 20, 3);
-
-// add_action('delete_post', 'unset_future_post_option_on_delete', 20, 1);
-
-// add_action('edit_attachment', 'purge_image_on_edit', 100, 1);
+add_action('transition_post_status', 'mxp_nxfcgi_check_post_status', 200, 3);

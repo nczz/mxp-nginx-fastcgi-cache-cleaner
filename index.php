@@ -1,8 +1,8 @@
 <?php
 /*
-Plugin Name: Nginx FastCGI 快取清除外掛
+Plugin Name: Nginx FastCGI Cache 清除小幫手 - Mxp.TW
 Plugin URI:
-Description: 輕量且分桌面與行動裝置的版本一起清除
+Description: 輕量且分桌面與行動裝置快取版本一起清除的工具
 Author: Chun
 Version: 1.0.0
 Author URI: https://www.mxp.tw/

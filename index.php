@@ -295,7 +295,7 @@ function mxp_nxfcgi_purge_by_options($post_id, $_purge_page, $_purge_archive, $_
         }
     }
     //清除特定連結
-    mxp_ngfcgi_custom_purge_urls();
+    mxp_nxfcgi_custom_purge_urls();
 }
 
 function mxp_nxfcgi_purge_post($post_id) {
@@ -333,7 +333,7 @@ function mxp_nxfcgi_purge_post($post_id) {
     }
 }
 //特別指定要清除的網址
-function mxp_ngfcgi_custom_purge_urls() {
+function mxp_nxfcgi_custom_purge_urls() {
     $parse      = wp_parse_url(home_url());
     $purge_urls = !empty(get_option('mxp_nxfcgi_custom_purge_urls', "")) ?
     explode("\r\n", get_option('mxp_nxfcgi_custom_purge_urls')) : array();

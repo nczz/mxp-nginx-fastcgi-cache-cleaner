@@ -24,10 +24,10 @@ function mxp_nxfcgi_toolbar_purge_link($wp_admin_bar) {
 
     if (is_admin()) {
         $clean_page = 'all';
-        $link_title = '清除全站 FastCGI 快取';
+        $link_title = 'Purge All FastCGI Cache';
     } else {
         $clean_page = 'current-url';
-        $link_title = '清除當前頁面 FastCGI 快取';
+        $link_title = 'Purge Current Page FastCGI Cache';
     }
 
     $purge_url = add_query_arg(
@@ -54,8 +54,8 @@ add_action('admin_bar_menu', 'mxp_nxfcgi_toolbar_purge_link', 100);
 function mxp_nxfcgi_admin_menu() {
     add_submenu_page(
         'options-general.php',
-        'Nginx FastCGI 快取',
-        'Nginx FastCGI 快取',
+        'Nginx FastCGI Cache',
+        'Nginx FastCGI Cache',
         'manage_options',
         'mxp_nxfcgi_setting',
         'mxp_nxfcgi_setting_page_callback'
@@ -81,7 +81,7 @@ function mxp_nginx_fastcgi_purge_all_admin_bar() {
     }
 
     if (!current_user_can('manage_options')) {
-        wp_die('抱歉，你無權操作此功能！');
+        wp_die('Sorry, You do not have authorization.');
     }
 
     if ('done' === $action) {
@@ -119,7 +119,7 @@ function mxp_nginx_fastcgi_purge_all_admin_bar() {
 add_action('admin_bar_init', 'mxp_nginx_fastcgi_purge_all_admin_bar');
 
 function mxp_purge_success_display_notices() {
-    echo '<div class="updated"><p>成功清除快取！</p></div>';
+    echo '<div class="updated"><p>Cache purged!</p></div>';
 }
 
 function mxp_nginx_fastcgi_purge_url($url) {

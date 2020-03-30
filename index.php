@@ -18,7 +18,7 @@ if (!defined('RT_WP_NGINX_HELPER_CACHE_PATH')) {
 
 function mxp_nxfcgi_toolbar_purge_link($wp_admin_bar) {
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         return;
     }
 
@@ -80,7 +80,7 @@ function mxp_nginx_fastcgi_purge_all_admin_bar() {
         return;
     }
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_die('Sorry, You do not have authorization.');
     }
 

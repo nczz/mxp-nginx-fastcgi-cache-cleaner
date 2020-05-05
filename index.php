@@ -427,3 +427,20 @@ function mxp_nxfcgi_check_post_status($new_status, $old_status, $post) {
     }
 }
 add_action('transition_post_status', 'mxp_nxfcgi_check_post_status', 200, 3);
+
+//商品無庫存時，清除商品頁面快取
+function mxp_wc_check_product_qty_cache($product_obj) {
+    if (is_object($product_obj)) {
+        $product_id = $product_obj->get_id();
+        if ('product_variation' === $product_obj->post_type) {
+            $product_id  = $product_obj->get_parent_id();
+            $product_url = get_permalink($product_id);
+            mxp_nginx_fastcgi_purge_url($product_url);
+        } else {
+            //取得簡單商品連結
+            $product_url = get_permalink($product_id);
+            mxp_nginx_fastcgi_purge_url($product_url);
+        }
+    }
+}
+add_action('woocommerce_no_stock', 'mxp_wc_check_product_qty_cache', 11, 1);

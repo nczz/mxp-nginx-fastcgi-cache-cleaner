@@ -94,7 +94,9 @@ function mxp_nginx_fastcgi_purge_all_admin_bar() {
 
     check_admin_referer('mxp-purge_all');
 
-    $current_url = user_trailingslashit(home_url($wp->request));
+    $current_url = add_query_arg($_SERVER['QUERY_STRING'], '', user_trailingslashit(home_url($wp->request)));
+    $arr_params  = array('mxp_clean_page', 'mxp_clean_action', '_wpnonce');
+    $current_url = remove_query_arg($arr_params, $current_url);
 
     if (!is_admin()) {
         $action       = 'purge_current_page';

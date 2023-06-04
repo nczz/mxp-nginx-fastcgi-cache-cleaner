@@ -154,6 +154,10 @@ function mxp_nginx_fastcgi_purge_url($url) {
         } else {
             error_log($version . ' 版本的 ' . $url . ' 快取檔案不存在');
         }
+        if (function_exists('rocket_clean_files')) {
+            rocket_clean_files((array) $url);
+            error_log('清除 WP Rocket 的 ' . $url . ' 頁面快取成功。');
+        }
     }
 }
 /**
@@ -195,6 +199,10 @@ function mxp_nginx_fastcgi_purge_homepage() {
         $homepage_url = trailingslashit(home_url());
     }
     mxp_nginx_fastcgi_purge_url($homepage_url);
+    if (function_exists('rocket_clean_home')) {
+        rocket_clean_home();
+        error_log('清除 WP Rocket 的 ' . $homepage_url . ' 頁面快取成功。');
+    }
     return true;
 
 }
@@ -446,3 +454,20 @@ function mxp_wc_check_product_qty_cache($product_obj) {
     }
 }
 add_action('woocommerce_no_stock', 'mxp_wc_check_product_qty_cache', 11, 1);
+
+function mxp_rocket_after_automatic_cache_purge_dir($url_deleted, $args) {
+    foreach ($url_deleted as $index => $item) {
+        // [
+        //   'home_url'  => 'http://example.com/home1',
+        //   'home_path' => '/path-to/home1/wp-content/cache/wp-rocket/example.com/home1',
+        //   'logged_in' => false,
+        //   'files'     => [
+        //       '/path-to/home1/wp-content/cache/wp-rocket/example.com/home1/deleted-page',
+        //       '/path-to/home1/wp-content/cache/wp-rocket/example.com/home1/very-dead-page',
+        //   ],
+        // ],
+        mxp_nginx_fastcgi_purge_url($item['home_url']);
+    }
+    mxp_nginx_fastcgi_purge_homepage();
+}
+add_action('rocket_after_automatic_cache_purge_dir', 'mxp_rocket_after_automatic_cache_purge_dir', 11, 2);
